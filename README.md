@@ -14,6 +14,13 @@ WeatherSphere provides real-time meteorological data with a sleek, animated user
 
 <br>
 
+<!-- Live Demo -->
+<a href="https://weather-app-virid-omega.vercel.app">
+  <img src="https://img.shields.io/badge/🚀_Live_Demo-000000?style=for-the-badge&logo=vercel&logoColor=white&labelColor=black" alt="Live Demo" />
+</a>
+
+<br><br>
+
 <!-- Tech Badges -->
 <p>
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
