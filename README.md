@@ -5,7 +5,7 @@ A modern weather application built with React, Vite, and OpenWeatherMap API that
 ![Weather App Screenshot](./src/assets/weatherSphere.png)
 
 ## Features ✨
-
+run
 - Real-time weather data for any city worldwide
 - Beautiful animated UI with AOS (Animate On Scroll)
 - Responsive design that works on all devices

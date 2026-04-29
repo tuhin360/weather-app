@@ -9,41 +9,51 @@ import {
 import { FaLocationDot, FaMountainSun } from "react-icons/fa6";
 import { WiHumidity } from "react-icons/wi";
 import AOS from "aos";
-import "aos/dist/aos.css"; // AOS styles
-import "./Weather.css"; // Custom CSS styles
+import "aos/dist/aos.css";
+import "./Weather.css";
 import { PiSunHorizonFill } from "react-icons/pi";
 
 const Weather = () => {
-  // State management for city input, weather data, and errors
   const [city, setCity] = useState("");
-  const [weatherData, setWeatherData] = useState();
-  const [error, setError] = useState();
+  const [weatherData, setWeatherData] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // OpenWeatherMap API configuration
-  const API_KEY = "dc51bd85494dfb908d3f31137230d6e4";
+  const API_KEY = import.meta.env.VITE_API_KEY;
 
-  // Initialize animations and fetch default weather
   useEffect(() => {
     AOS.init({
       duration: 800,
       easing: "ease-in-out",
       once: true,
-      mirror: false,
-      offset: 120,
     });
 
-    // Fetch Dhaka's weather by default
-    fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=Dhaka&units=metric&appid=${API_KEY}`
-    )
-      .then((response) => response.json())
-      .then((data) => setWeatherData(data))
-      .catch((err) => setError("Failed to load default weather data"));
-  }, []);
+    const fetchDefaultWeather = async () => {
+      try {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=Dhaka&units=metric&appid=${API_KEY}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setWeatherData(data);
+        }
+      } catch (err) {
+        console.error("Failed to load default weather data");
+      }
+    };
 
-  // Fetch weather data from API
+    fetchDefaultWeather();
+  }, [API_KEY]);
+
   const fetchWeatherData = async () => {
-    if (!city.trim()) return;
+    if (!city.trim()) {
+      setError("Please enter a city name.");
+      return;
+    }
+    
+    setLoading(true);
+    setError("");
+    
     try {
       const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`
@@ -52,27 +62,21 @@ const Weather = () => {
 
       if (response.ok) {
         setWeatherData(data);
-        setError("");
       } else {
         setError("City not found. Please enter a valid city name.");
+        setWeatherData(null);
       }
     } catch (error) {
-      setError(error.message);
+      setError("Something went wrong. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Event handlers
-  const handleChange = (e) => setCity(e.target.value);
-  const handleSearch = () => {
-    fetchWeatherData();
-  };
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      fetchWeatherData();
-    }
+    if (e.key === "Enter") fetchWeatherData();
   };
 
-  // Format time helper
   const formatTime = (timestamp) => {
     return new Date(timestamp * 1000).toLocaleTimeString([], {
       hour: "2-digit",
@@ -83,171 +87,74 @@ const Weather = () => {
 
   return (
     <div className="container">
-      {/* App Header with fade-down animation */}
-      <header className="app-header" data-aos="fade-down">
-        <h1 className="app-title">WeatherSphere</h1>
-        <p className="app-subtitle">Real-time weather updates</p>
-      </header>
+      {/* Main App Content Wrapper */}
+      <main className="main-content">
+        <header className="app-header" data-aos="fade-down">
+          <h1 className="app-title">WeatherSphere</h1>
+          <p className="app-subtitle">Real-time weather updates</p>
+        </header>
 
-      {/* Search Container with fade-up animation and slight delay */}
-      <div className="search-container" data-aos="fade-up" data-aos-delay="100">
-        <div className="search-input-wrapper">
-          <input
-            type="text"
-            value={city}
-            onChange={handleChange}
-            onKeyDown={handleKeyPress}
-            placeholder="Enter city name"
-            className="search-input"
-          />
-          <div className="vertical-divider"></div>
-          <button onClick={handleSearch} className="search-button">
-            <FaSearch />
-          </button>
-        </div>
-      </div>
-
-      {/* Error Message with fade-up animation */}
-      {error && (
-        <p className="error-message" data-aos="fade-up">
-          {error}
-        </p>
-      )}
-
-      {/* Main Weather Content - Only shown when data is available */}
-      {weatherData && weatherData.weather && (
-        <div className="weather-content">
-          {/* Current Weather Section */}
-          <div className="weather-main" data-aos="fade-up">
-            <div className="weather-icon">
-              <img
-                src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@4x.png`}
-                alt={weatherData.weather[0].description}
-              />
-              <p className="weather-description">
-                {weatherData.weather[0].description}
-              </p>
-            </div>
-
-            <div className="weather-temp">
-              <h2>
-                {Math.round(weatherData.main.temp)}
-                <span>&deg;</span>C
-              </h2>
-            </div>
-
-            <div className="location">
-              <FaLocationDot className="location-icon" />
-              <h2>
-                {weatherData.name}, {weatherData.sys.country}
-              </h2>
-            </div>
-          </div>
-
-          {/* Weather Stats Grid - Each card has staggered animation */}
-          <div className="weather-stats">
-            {/* Wind Card with fade-up and delay */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="100"
-            >
-              <FaWind className="weather-icon" />
-              <h3>{weatherData.wind.speed} km/h</h3>
-              <p>Wind Speed</p>
-            </div>
-
-            {/* Humidity Card with fade-up and slightly longer delay */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="150"
-            >
-              <WiHumidity className="weather-icon" />
-              <h3>{weatherData.main.humidity}%</h3>
-              <p>Humidity</p>
-            </div>
-
-            {/* Sunrise Card */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="200"
-            >
-              <PiSunHorizonFill className="weather-icon" />
-              <h3>{formatTime(weatherData.sys.sunrise)}</h3>
-              <p>Sunrise</p>
-            </div>
-
-            {/* Sunset Card */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="250"
-            >
-              <FaMountainSun className="weather-icon" />
-              <h3>{formatTime(weatherData.sys.sunset)}</h3>
-              <p>Sunset</p>
-            </div>
-
-            {/* Feels Like Card */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="300"
-            >
-              <FaTemperatureHigh className="weather-icon" />
-              <h3>
-                {Math.round(weatherData.main.feels_like)} <span>&deg;</span>C
-              </h3>
-              <p>Feels Like</p>
-            </div>
-
-            {/* Min Temperature Card */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="350"
-            >
-              <FaTemperatureLow className="weather-icon" />
-              <h3>
-                {Math.round(weatherData.main.temp_min)}
-                <span>&deg;</span>C
-              </h3>
-              <p>Min Temp</p>
-            </div>
-
-            {/* Max Temperature Card */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="400"
-            >
-              <FaTemperatureHigh className="weather-icon" />
-              <h3>{Math.round(weatherData.main.temp_max)}°C</h3>
-              <p>Max Temp</p>
-            </div>
-
-            {/* Pressure Card */}
-            <div
-              className="weather-card"
-              data-aos="fade-up"
-              data-aos-delay="450"
-            >
-              <FaTachometerAlt className="weather-icon" />
-              <h3>{weatherData.main.pressure} hPa</h3>
-              <p>Pressure</p>
-            </div>
+        <div className="search-container" data-aos="fade-up" data-aos-delay="100">
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Enter city name..."
+              className="search-input"
+            />
+            <button onClick={fetchWeatherData} className="search-button" disabled={loading}>
+              {loading ? "..." : <FaSearch />}
+            </button>
           </div>
         </div>
-      )}
 
-      {/* Footer with fade-up animation */}
+        {error && <p className="error-message" data-aos="fade-up">{error}</p>}
+
+        {weatherData && weatherData.weather && (
+          <div className="weather-content" data-aos="fade-up">
+            <div className="weather-main">
+              <div className="weather-icon">
+                <img
+                  src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@4x.png`}
+                  alt={weatherData.weather[0].description}
+                />
+                <p className="weather-description">{weatherData.weather[0].description}</p>
+              </div>
+              <div className="weather-temp">
+                <h2>{Math.round(weatherData.main.temp)}<span>&deg;</span>C</h2>
+              </div>
+              <div className="location">
+                <FaLocationDot className="location-icon" />
+                <h2>{weatherData.name}, {weatherData.sys.country}</h2>
+              </div>
+            </div>
+
+            <div className="weather-stats">
+              {[
+                { icon: <FaWind />, val: `${weatherData.wind.speed} km/h`, label: "Wind Speed" },
+                { icon: <WiHumidity />, val: `${weatherData.main.humidity}%`, label: "Humidity" },
+                { icon: <PiSunHorizonFill />, val: formatTime(weatherData.sys.sunrise), label: "Sunrise" },
+                { icon: <FaMountainSun />, val: formatTime(weatherData.sys.sunset), label: "Sunset" },
+                { icon: <FaTemperatureHigh />, val: `${Math.round(weatherData.main.feels_like)}°C`, label: "Feels Like" },
+                { icon: <FaTemperatureLow />, val: `${Math.round(weatherData.main.temp_min)}°C`, label: "Min Temp" },
+                { icon: <FaTemperatureHigh />, val: `${Math.round(weatherData.main.temp_max)}°C`, label: "Max Temp" },
+                { icon: <FaTachometerAlt />, val: `${weatherData.main.pressure} hPa`, label: "Pressure" },
+              ].map((stat, idx) => (
+                <div className="weather-card" key={idx} data-aos="fade-up" data-aos-delay={100 + idx * 50}>
+                  <div className="weather-icon">{stat.icon}</div>
+                  <h3>{stat.val}</h3>
+                  <p>{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+
       <footer className="app-footer" data-aos="fade-up">
-        <p>
-          &copy; {new Date().getFullYear()} WeatherSphere developed by Jahedi
-          Alam Tuhin
-        </p>
+        <p>&copy; {new Date().getFullYear()} WeatherSphere developed by Jahedi Alam Tuhin</p>
       </footer>
     </div>
   );
